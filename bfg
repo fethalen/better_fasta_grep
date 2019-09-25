@@ -1,0 +1,676 @@
+#!/usr/bin/env python
+
+# Author: Felix Thalen
+# Date: September 9, 2019
+
+'''
+Search for one or more patterns within a FASTA file and print matching sequence
+headers and or sequences. Default behaviour: look for the provided patterns
+only within headers and output both headers and sequences.
+'''
+
+import argparse
+import io
+import select
+import sys
+import re
+import os
+
+VERSION_NUMBER = 0.1
+NORMAL = '\033[0m'
+BOLD_RED = '\033[1;31m'
+GREEN = '\033[32m'
+CYAN = '\033[36m'
+OFFSET = len(BOLD_RED) + len(NORMAL)
+
+
+def supports_color():
+    '''
+    Returns True if the running system's terminal supports color, and False
+    otherwise.
+    '''
+    plat = sys.platform
+    supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
+                                                  'ANSICON' in os.environ)
+    # isatty is not always implemented, #6223.
+    is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+    if not supported_platform or not is_a_tty:
+        return False
+    return True
+
+
+def lines_in_fasta(file):
+    '''
+    Takes the path to a FASTA file as an input and yields each line, without
+    new line characters as strings.
+    '''
+    if isinstance(file, io.TextIOWrapper):
+        # input comes from stdin, not file
+        for line in file:
+            yield line.rstrip()
+    else:
+        with open(file) as fasta_file:
+            for line in fasta_file:
+                yield line.rstrip()
+
+
+def is_header(line):
+    'Returns True if the provided string begins with a greater than sign.'
+    return line.startswith('>')
+
+
+def is_hit(result, invert_match=False):
+    '''
+    Takes a regular expression match object and a Boolean as an input. Returns
+    True if the the result is a hit and the search is not inverted. Also
+    returns True if the result is a miss but the search is inverted, else
+    False.
+    '''
+    return (invert_match and not result) or (not invert_match and result)
+
+
+def highlight_str(string, span):
+    '''
+    Takes a string and a 2-integer tuple as an input. Return the string with
+    red and bold escape characters added to the front of the span indicated by
+    the tuple.
+    '''
+    start, end = span
+    color_str = ''
+    color_str += string[0: start]
+    color_str += BOLD_RED
+    color_str += string[start: end]
+    color_str += NORMAL
+    color_str += string[end:]
+    return color_str
+
+
+def add_pattern(string, ignore_case=False, fixed_strings=False):
+    '''
+    Takes a string and a Boolean as an input. Returns the string as a regular
+    expression Pattern object with re.IGNORECASE set if ignore_case is True.
+    '''
+    if fixed_strings:
+        string = re.escape(string)
+
+    if ignore_case and fixed_strings:
+        return re.compile(string, re.IGNORECASE)
+    return re.compile(string)
+
+
+def get_patterns(pattern=False, patterns_file=False, ignore_case=False,
+                 fixed_strings=False):
+    '''
+    Takes a string, the path to a file containing multiple patterns, separated
+    by newline, and a Boolean as an input.
+    '''
+    patterns = set()
+
+    if pattern:
+        patterns.add(add_pattern(pattern, ignore_case, fixed_strings))
+
+    if patterns_file:
+        with open(patterns_file) as file:
+            for line in file:
+                line = line.rstrip()
+                patterns.add(add_pattern(line, ignore_case, fixed_strings))
+
+    return patterns
+
+
+def merge_spans(span_pair):
+    '''
+    Takes a pair of spans as an input and returns a single span which
+    contains both of the input spans.
+    '''
+    return min(span_pair[1]), max(span_pair[0])
+
+
+def spans_overlap(span_pair):
+    'Takes a set of spans as an input and returns True if the spans overlap.'
+    span_a = span_pair[0]
+    span_b = span_pair[1]
+    return range(max(span_a[0], span_b[0]), min(span_a[-1], span_b[-1]) + 1)
+
+
+def overlapping_spans(spans):
+    '''
+    Returns True if any of the spans within the provided list of spans
+    overlaps.
+    '''
+    last_span = ()
+
+    for current_span in spans:
+        if not last_span:
+            last_span = current_span
+            continue
+
+        if spans_overlap((current_span, last_span)):
+            return True
+    return False
+
+
+def merge_overlapping_spans(spans):
+    '''
+    Takes a set of spans, in the form of tuples, as an input and merges any
+    overlapping span pair.
+    '''
+    last_span = ()
+    merged_spans = set()
+
+    for current_span in spans:
+        if not last_span:
+            last_span = current_span
+            continue
+
+        if spans_overlap((current_span, last_span)):
+            merged_spans.add(merge_spans((current_span, last_span)))
+            last_was_merged = True
+        elif last_was_merged:
+            last_was_merged = False
+        else:
+            merged_spans.add(last_span)
+
+        last_span = current_span
+
+    if not last_was_merged:
+        merged_spans.add(last_span)
+
+    return sorted(merged_spans)
+
+
+def calculate_spans(spans):
+    '''
+    Takes a set of spans, in form of tuples, as an input and return the subset
+    of spans which does not contain any overlaps by merging andd pruning spans
+    that overlap.
+    '''
+    spans = sorted(spans)
+    spans_w_offset = set()
+
+    while overlapping_spans(spans):
+        spans = merge_overlapping_spans(spans)
+
+    for span_count, span in enumerate(sorted(spans)):
+        offset = OFFSET * span_count
+        spans_w_offset.add((span[0] + offset, span[1] + offset))
+
+    return sorted(spans_w_offset)
+
+
+def searchiter(patterns, string, invert_match=False, color=False):
+    '''
+    Takes a set of regular expression pattern objects, a string and two
+    Booleans as an input.
+    '''
+    pattern_found = False
+    spans = set()
+
+    for pattern in patterns:
+        for result in pattern.finditer(string):
+            if not is_hit(result, invert_match):
+                continue
+
+            pattern_found = True
+            if color:
+                spans.add(result.span())
+            else:
+                break
+
+    if color and spans:
+        for span in calculate_spans(spans):
+            string = highlight_str(string, span)
+
+    return pattern_found, string
+
+
+def count_header_matches(patterns, file, invert_match=False, max_count=None):
+    '''
+    Takes a set of a patterns, the path to a FASTA file, a Boolean and the
+    maximum number of allowed matches (an integer) as an input. Returns the
+    number of matches found within the headers of the FASTA file given the
+    settings (invert match or not and the maximum allowed number of matches).
+    '''
+    hit_count = 0
+
+    for line in lines_in_fasta(file):
+        if not is_header(line):
+            continue
+
+        pattern_found, _ = searchiter(patterns, line, invert_match)
+
+        if pattern_found:
+            hit_count += 1
+            if max_count and hit_count >= max_count:
+                return hit_count
+
+    return hit_count
+
+
+def count_seq_matches(patterns, file, invert_match=False, max_count=None):
+    '''
+    Takes a set of a patterns, the path to a FASTA file, a Boolean and the
+    maximum number of allowed matches (an integer) as an input. Returns the
+    number of matches found within the sequences of the FASTA file given the
+    settings (invert match or not and the maximum allowed number of matches).
+    '''
+    hit_count = 0
+
+    for line in lines_in_fasta(file):
+        if is_header(line):
+            continue
+
+        pattern_found, _ = searchiter(patterns, line, invert_match)
+        if pattern_found:
+            hit_count += 1
+            if max_count and hit_count >= max_count:
+                return hit_count
+
+    return hit_count
+
+
+def count_record_matches(patterns, file, invert_match=False, max_count=None):
+    '''
+    Takes a set of a patterns, the path to a FASTA file, a Boolean and the
+    maximum number of allowed matches (an integer) as an input. Returns the
+    number of matches found within the sequences of the FASTA file given the
+    settings (invert match or not and the maximum allowed number of matches).
+    '''
+    hit_count = 0
+
+    for line in lines_in_fasta(file):
+        pattern_found, _ = searchiter(patterns, line, invert_match)
+        if pattern_found:
+            hit_count += 1
+            if max_count and hit_count >= max_count:
+                return hit_count
+
+    return hit_count
+
+
+def search_headers(patterns, file, invert_match=False, color=False,
+                   max_count=None):
+    '''
+    TODO: update this comment
+
+    Takes a list of patterns and a FASTA file path as an input. For each header
+    with a matching pattern, yield the whole record in the form of tuples; each
+    tuple represents one line where the first item is the line itself and the
+    second item is a Boolean which is True if the preceeding item is a header.
+    '''
+    pattern_found = False
+    hit_count = 0
+
+    for line_number, line in enumerate(lines_in_fasta(file), 1):
+        if is_header(line):
+            pattern_found, line = searchiter(patterns, line, invert_match,
+                                             color)
+
+        if pattern_found and is_header(line):
+            hit_count += 1
+            if max_count and hit_count > max_count:
+                return
+        if pattern_found:
+            yield line_number, line
+
+
+def insert_linebreaks(string, linebreaks, spans):
+    '''
+    '''
+    print(linebreaks)
+    print(spans)
+
+    return string, spans
+
+
+def searchiter_w_linebreaks(patterns, string, invert_match=False, color=False,
+                            linebreaks=False):
+    '''
+    Takes a set of regular expression pattern objects, a string and two
+    Booleans as an input.
+    '''
+    pattern_found = False
+    spans = set()
+
+    for pattern in patterns:
+        for result in pattern.finditer(string):
+            if not is_hit(result, invert_match):
+                continue
+
+            pattern_found = True
+            if color:
+                spans.add(result.span())
+            else:
+                break
+
+    if linebreaks:
+        string, spans = insert_linebreaks(string, linebreaks, spans)
+
+    if color and spans:
+        for span in calculate_spans(spans):
+            string = highlight_str(string, span)
+
+    return pattern_found, string
+
+
+def search_sequences(patterns, file, invert_match=False, color=False,
+                     max_count=None):
+    '''
+    Takes a pattern string and a FASTA file path as an input. For each sequence
+    with a matching pattern, yield the whole record in the form of a tuple;
+    each tuple represents one line where the first item is the line itself and
+    the second item is a Boolean which is True if the preceeding item is a
+    header.
+    '''
+    sequence_data = ''
+    linebreaks = set()
+    # current_header = ()
+    # hit_count = 0
+    # match = False
+
+    for line_number, line in enumerate(lines_in_fasta(file), 1):
+        if is_header(line):
+            current_header = (line_number, line)
+
+            if not sequence_data:
+                continue
+
+            match, sequence_data = searchiter_w_linebreaks(
+                patterns, sequence_data, invert_match, color, linebreaks)
+
+            sequence_data = ''
+            linebreaks = set()
+        else:
+            linebreaks.add((line_number, len(line)))
+            sequence_data += line
+
+    # for line_number, line in enumerate(lines_in_fasta(file), 1):
+    #     if is_header(line) and not match:
+    #         seq_lines = set()
+    #         current_header = (line_number, line)
+    #     elif is_header(line) and match:
+    #         hit_count += 1
+
+    #         yield current_header
+
+    #         for seq_line_no, subseq in sorted(seq_lines):
+    #             yield seq_line_no, subseq
+
+    #         match = False
+    #         seq_lines = set()
+    #         current_header = (line_number, line)
+
+    #         if max_count and hit_count >= max_count:
+    #             break
+    #     else:
+    #         pattern_found, seq = searchiter(patterns, line, invert_match, color)
+
+    #         if pattern_found:
+    #             match = True
+
+    #         seq_lines.add((line_number, seq))
+
+    # if current_header and match and not (max_count and hit_count == max_count):
+    #     yield current_header
+
+    #     for seq_line_no, subseq in sorted(seq_lines):
+    #         yield seq_line_no, subseq
+
+
+def search_records(patterns, file, invert_match=False, color=False,
+                   max_count=None):
+    '''
+    Takes a pattern string and a FASTA file path as an input. Search whole
+    sequence records (both headers and sequence data) for a matching pattern.
+    For each match, yield the entire record in the form of a tuple; each tuple
+    represents one line where the first item is the line itself and the second
+    item is a Boolean which is True if the preceeding item is a header.
+    '''
+    record_lines = set()
+    match = False
+    hit_count = 0
+
+    for line_number, line in enumerate(lines_in_fasta(file), 1):
+        if is_header(line) and match:
+            match = False
+            hit_count += 1
+
+            for entry in sorted(record_lines):
+                yield entry
+
+            record_lines = set()
+            record_lines.add((line_number, line))
+
+            if max_count and hit_count >= max_count:
+                break
+            continue
+
+        pattern_found, line = searchiter(patterns, line, invert_match, color)
+
+        if pattern_found:
+            match = True
+
+        record_lines.add((line_number, line))
+
+    if record_lines and match and not (max_count and hit_count == max_count):
+        for entry in sorted(record_lines):
+            yield entry
+
+
+def stdin_has_data():
+    'Returns True if stdin contains any data.'
+    return select.select([sys.stdin, ], [], [], 0.0)[0]
+
+
+def output_headers(hits, line_number=False, color=False):
+    '''
+    Takes a set of line numbers, a set of lines, and a Boolean as an input.
+    Output sequences, with or without line numbers whether the Boolean is True
+    or False.
+    '''
+    if line_number:
+        for number, line in hits:
+            if not is_header(line):
+                continue
+
+            if color:
+                line_no = GREEN + str(number) + CYAN + ':' + NORMAL
+            else:
+                line_no = str(number) + ':'
+            print(line_no + line)
+    else:
+        for _, line in hits:
+            if not is_header(line):
+                continue
+
+            print(line)
+
+
+def output_seqs(hits, line_number=False, color=False):
+    '''
+    Takes a set of line numbers, a set of lines, and a Boolean as an input.
+    Output sequences, with or without line numbers whether the Boolean is True
+    or False.
+    '''
+    if line_number:
+        for number, line in hits:
+            if is_header(line):
+                continue
+
+            if color:
+                line_no = GREEN + str(number) + CYAN + ':' + NORMAL
+            else:
+                line_no = str(number) + ':'
+            print(line_no + line)
+    else:
+        for _, line in hits:
+            if is_header(line):
+                continue
+
+            print(line)
+
+
+def output_records(hits, line_number=False, color=False):
+    '''
+    Takes a set of line numbers, a set of lines, and a Boolean as an input.
+    Output both headers and sequences with or without line numbers whether the
+    Boolean is True or False.
+    '''
+    if line_number:
+        for number, line in hits:
+            if color:
+                line_no = GREEN + str(number) + CYAN + ':' + NORMAL
+            else:
+                line_no = str(number) + ':'
+            print(line_no + line)
+    else:
+        for _, line in hits:
+            print(line)
+
+
+def verify_args(arguments):
+    '''
+    Process the provided argument object and perform some basic sanity checks.
+    '''
+    fasta_file = arguments.fasta_file
+    pattern = arguments.pattern
+
+    if not arguments.fasta_file and stdin_has_data():
+        # FILE was not provided and stdin contains data, read input from stdin
+        fasta_file = sys.stdin
+    elif os.path.isfile(arguments.pattern):
+        # PATTERN is a file assign this file to fasta_file
+        fasta_file = arguments.pattern
+        pattern = ''
+
+    return fasta_file, pattern
+
+
+def parse_args():
+    'Parse the user-provided arguments.'
+    parser = argparse.ArgumentParser(description=__doc__, add_help=False)
+
+    group = parser.add_argument_group('pattern selection and interpretation')
+    group.add_argument('-F', '--fixed-strings',
+                       action='store_true',
+                       default=False,
+                       help='PATTERN is a string')
+    group.add_argument('-f', '--file',
+                       metavar='FILE',
+                       help='take patterns, separated by newline characters, \
+                             from FILE')
+    group.add_argument('-i', '-y', '--ignore-case',
+                       action='store_true',
+                       default=False,
+                       help='ignore case distinctions')
+    group.add_argument('--search-sequences',
+                       action='store_true',
+                       default=False,
+                       help='only look for PATTERN in sequences')
+    group.add_argument('--search-records',
+                       action='store_true',
+                       default=False,
+                       help='look for PATTERN in headers and sequences')
+
+    group = parser.add_argument_group('miscellaneous')
+    group.add_argument('-V', '--version',
+                       action='version',
+                       version=str(VERSION_NUMBER),
+                       help='display version information and exit')
+    group.add_argument('-v', '--invert-match',
+                       action='store_true',
+                       default=False,
+                       help='select non-matching lines')
+    group.add_argument('--help',
+                       action='help',
+                       help='display this help text and exit')
+
+    group = parser.add_argument_group('output control')
+    group.add_argument('-m', '--max-count',
+                       metavar='NUM',
+                       default=None,
+                       type=int,
+                       help='stop after NUM selected lines')
+    group.add_argument('-n', '--line-number',
+                       action='store_true',
+                       default=False,
+                       help='print line number with output lines')
+    group.add_argument('-c', '--count',
+                       action='store_true',
+                       default=False,
+                       help='print only a count of select lines')
+    group.add_argument('--no-color',
+                       action='store_true',
+                       default=False,
+                       help='do not colorize text when printed to stdout')
+    group.add_argument('--output-headers',
+                       action='store_true',
+                       default=False,
+                       help='only output the headers of matching records')
+    group.add_argument('--output-sequences',
+                       action='store_true',
+                       default=False,
+                       help='only output the sequences of matching records')
+
+    parser.add_argument('pattern',
+                        metavar='PATTERN',
+                        nargs='?',
+                        type=str,
+                        help='the pattern you wish to match in the FASTA file')
+    parser.add_argument('fasta_file',
+                        metavar='FILE',
+                        nargs='?',
+                        default=None,
+                        type=str,
+                        help='the FASTA file to search within')
+
+    return parser.parse_args(args=None if sys.argv[1:] else ['--help'])
+
+
+def main():
+    'Run the program from start to finish.'
+    args = parse_args()
+    color = True
+
+    if not supports_color() or args.no_color:
+        # the output is being redirected or the terminal is lacking color support
+        color = False
+
+    fasta_file, pattern = verify_args(args)
+    patterns = get_patterns(pattern, args.file, args.ignore_case,
+                            args.fixed_strings)
+
+    if args.count and args.search_sequences:
+        hit_count = count_seq_matches(patterns, fasta_file, args.invert_match, args.max_count)
+    elif args.count and args.search_records:
+        hit_count = count_record_matches(patterns, fasta_file, args.invert_match,
+                                         args.max_count)
+    elif args.count:
+        hit_count = count_header_matches(patterns, fasta_file, args.invert_match,
+                                         args.max_count)
+
+    if args.count:
+        # count requested, only print the number of matches
+        print(hit_count)
+        sys.exit()
+
+    if args.search_sequences:
+        hits = search_sequences(patterns, fasta_file, args.invert_match, color,
+                                args.max_count)
+    elif args.search_records:
+        hits = search_records(patterns, fasta_file, args.invert_match, color,
+                              args.max_count)
+    else:
+        hits = search_headers(patterns, fasta_file, args.invert_match, color,
+                              args.max_count)
+
+    if args.output_sequences and not args.output_headers:
+        output_seqs(hits, args.line_number, color)
+    elif args.output_headers and not args.output_sequences:
+        output_headers(hits, args.line_number, color)
+    else:
+        output_records(hits, args.line_number, color)
+
+
+if __name__ == '__main__':
+    main()
