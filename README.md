@@ -1,4 +1,5 @@
-<img src="https://gitlab.com/fethalen/bfg/raw/master/images/bfg.png" alt="BFG logo"/>
+Better FASTA Grep
+-----------------
 
 ## About
 
@@ -6,6 +7,7 @@ Better FASTA Grep, or BFG for short, is a Grep-like utility for retrieving
 matching sequence records from a FASTA file. Given one or more patterns and a
 FASTA file, it searches the file for matching headers and or sequences and
 outputs any matching headers, sequences, or both.
+<img src="https://gitlab.com/fethalen/bfg/raw/master/images/bfg.png" alt="BFG logo - a pair of binoculars" align="right" width = "20%"/>
 
 ## Quick installation
 
@@ -41,5 +43,9 @@ export PATH=$PATH:${HOME}/projects/bfg >> ~/.bashrc
 4. [Regular Expressions](https://gitlab.com/fethalen/bfg/wikis/home#regex)
 5. [Input Data](https://gitlab.com/fethalen/bfg/wikis/home#input)
 6. [Usage](https://gitlab.com/fethalen/bfg/wikis/home#usage)
+
+## License
+
+
 
 © Bleidorn Lab 2019
