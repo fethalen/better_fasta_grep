@@ -8,7 +8,7 @@ matching sequence records from a FASTA file. Given one or more patterns and a
 FASTA file, it searches the file for matching headers and or sequences and
 outputs any matching headers, sequences, or both.
 
-### Features
+## Features
 
 * Search headers, sequences, or both
 * Search via regular expressions or plain strings
@@ -20,7 +20,7 @@ outputs any matching headers, sequences, or both.
 * Multi-line sequences are treated as singular units
 * Flexible output options: output headers, sequences, or both
 
-### Quick installation
+## Quick installation
 
 Download the script onto your computer by clicking the 'Download' button on
 this page, or use `git` to copy the `bfg` project into your current directory:
@@ -46,7 +46,7 @@ would type:
 export PATH=$PATH:${HOME}/projects/bfg >> ~/.bashrc
 ```
 
-### Documentation
+## Documentation
 
 1. [Introduction](https://gitlab.com/fethalen/bfg/wikis/home#introduction)
 2. [Installation](https://gitlab.com/fethalen/bfg/wikis/home#installation)
