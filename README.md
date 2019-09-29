@@ -20,6 +20,10 @@ outputs any matching headers, sequences, or both.
 * Multi-line sequences are treated as singular units
 * Flexible output options: output headers, sequences, or both
 
+<img src="https://gitlab.com/fethalen/bfg/raw/master/images/bfg_screenshot_1.png" alt="BFG Screenshot" />
+
+A screenshot of running BFG under macOS Mojave.
+
 ## Quick installation
 
 Download the script onto your computer by clicking the 'Download' button on
