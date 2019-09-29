@@ -1,3 +1,5 @@
+<img src="https://gitlab.com/fethalen/bfg/raw/master/images/bfg.png" alt="BFG logo"/>
+
 ## About
 
 Better FASTA Grep, or BFG for short, is a Grep-like utility for retrieving
@@ -7,18 +9,29 @@ outputs any matching headers, sequences, or both.
 
 ## Quick installation
 
-`bfg` is provided as a single, self-contained Python script. The easiest way to
-install it is via `git`:
+Download the script onto your computer by clicking the 'Download' button on
+this page, or use `git` to copy the `bfg` project into your current directory:
 
 ```bash
 git clone https://gitlab.com/fethalen/bfg
 ```
 
-If you don't have `git` installed, you can simply download this repository,
-move into the containing directory and run it using `./bfg`. You may have to
-make the script executable by typing `chmod +x bfg`, before trying to run it.
+Make the script executable by typing `chmod +x bfg`, while in the `bfg`
+directory. `bfg` can now be run by typing the following command.
 
-If you see yourself using this tool frequently then simply add it to your path.
+```bash
+./bfg --help
+```
+
+If you see yourself using this tool frequently, then you can add it to your
+path, so that you can reference it from any working directory. First, put the
+`bfg` directory into a permanent location (not your Desktop or Downloads
+folder). I keep my copy of `bfg` in my `~/projects` directory, so for me I
+would type:
+
+```bash
+export PATH=$PATH:${HOME}/projects/bfg >> ~/.bashrc
+```
 
 ## Documentation
 
