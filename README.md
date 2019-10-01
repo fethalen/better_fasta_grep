@@ -50,7 +50,7 @@ would type:
 export PATH=$PATH:${HOME}/projects/bfg >> ~/.bashrc
 ```
 
-## Documentation
+## [Documentation](https://gitlab.com/fethalen/bfg/wikis/home)
 
 1. [Introduction](https://gitlab.com/fethalen/bfg/wikis/home#introduction)
 2. [Installation](https://gitlab.com/fethalen/bfg/wikis/home#installation)

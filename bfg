@@ -168,6 +168,7 @@ def searchiter(patterns, string, invert_match=False, color=False):
     highlighted string.
     '''
     pattern_found = False
+    pattern_found_in_record = False
     spans = set()
 
     for pattern in patterns:
@@ -176,17 +177,20 @@ def searchiter(patterns, string, invert_match=False, color=False):
         if not pattern_found:
             continue
 
-        if pattern_found and (color and not invert_match):
+        if not pattern_found_in_record:
+            pattern_found_in_record = True
+
+        if color and not invert_match:
             for result in pattern.finditer(string):
                 spans.add(result.span())
-        else:
+        elif not color or invert_match:
             break
 
     if color and spans:
         for span in merge_overlapping_spans(spans):
             string = highlight_str(string, span)
 
-    return pattern_found, string
+    return pattern_found_in_record, string
 
 
 def count_header_matches(patterns, file, invert_match=False, max_count=None):
@@ -299,8 +303,6 @@ def count_record_matches(patterns, file, invert_match=False, max_count=None):
 def search_headers(patterns, file, invert_match=False, color=False,
                    max_count=None):
     '''
-    TODO: update this comment
-
     Takes a list of patterns and a FASTA file path as an input. For each header
     with a matching pattern, yield the whole record in the form of tuples; each
     tuple represents one line where the first item is the line itself and the
@@ -398,8 +400,12 @@ def search_sequences(patterns, file, invert_match=False, color=False,
     linebreaks = set()
     sequence_data = ''
     current_header = ()
+    hit_count = 0
 
     for line_number, line in enumerate(lines_in_fasta(file), 1):
+        if hit_count >= max_count:
+            return
+
         if is_header(line):
             if sequence_data:
                 hits = searchiter_w_linebreaks(
@@ -409,6 +415,7 @@ def search_sequences(patterns, file, invert_match=False, color=False,
 
                 for seq_line_no, seq_line in hits:
                     if first_iteration:
+                        hit_count += 1
                         yield current_header
 
                     yield seq_line_no, seq_line
@@ -429,6 +436,7 @@ def search_sequences(patterns, file, invert_match=False, color=False,
 
         for seq_line_no, seq_line in hits:
             if first_iteration:
+                hit_count += 1
                 yield current_header
 
             yield seq_line_no, seq_line
@@ -444,46 +452,101 @@ def search_records(patterns, file, invert_match=False, color=False,
     represents one line where the first item is the line itself and the second
     item is a Boolean which is True if the preceeding item is a header.
     '''
+    linebreaks = set()
     last_header = ''
     sequence_data = ''
     hit_count = 0
 
     for line_number, line in enumerate(lines_in_fasta(file), 1):
         if is_header(line) and sequence_data:
-            header_match, _ = searchiter(
-                patterns, last_header, invert_match)
-
+            header_match, header_line = searchiter(
+                patterns, last_header[1], invert_match, color)
             seq_match, _ = searchiter(
                 patterns, sequence_data, invert_match)
+            header_line_number = last_header[0]
 
-            if header_match or seq_match:
+            if seq_match:
+                if max_count and hit_count >= max_count:
+                    return
+
+                hits = searchiter_w_linebreaks(
+                    patterns, sequence_data, invert_match, color, linebreaks)
+                first_iteration = True
+
+                for seq_line_no, seq_line in hits:
+                    if first_iteration:
+                        yield header_line_number, header_line
+
+                    yield seq_line_no, seq_line
+                    first_iteration = False
+
+                hit_count += 1
+            elif header_match:
+                if max_count and hit_count >= max_count:
+                    return
+
+                yield header_line_number, header_line
+                offset = 0
+
+                for subseq_line_no, linebreak in sorted(linebreaks):
+                    start = offset
+                    end = offset + linebreak
+                    subseq = sequence_data[start:end]
+                    yield subseq_line_no, subseq
+                    offset += linebreak
+
                 hit_count += 1
 
-                if max_count and hit_count >= max_count:
-                    return hit_count
-
-            last_header = line
+            last_header = line_number, line
             sequence_data = ''
+            linebreaks = set()
         elif is_header(line):
-            last_header = line
+            last_header = line_number, line
             sequence_data = ''
+            linebreaks = set()
             continue
         else:
             sequence_data += line
+            linebreaks.add((line_number, len(line)))
 
     if sequence_data:
-        header_match, _ = searchiter(
-            patterns, last_header, invert_match)
-
+        header_match, header_line = searchiter(
+            patterns, last_header[1], invert_match, color)
         seq_match, _ = searchiter(
             patterns, sequence_data, invert_match)
+        header_line_number = last_header[0]
 
-        if header_match or seq_match:
-            hit_count += 1
-
+        if seq_match:
             if max_count and hit_count >= max_count:
-                return hit_count
-    return hit_count
+                return
+
+            hits = searchiter_w_linebreaks(
+                patterns, sequence_data, invert_match, color, linebreaks)
+            first_iteration = True
+
+            for seq_line_no, seq_line in hits:
+                if first_iteration:
+                    yield header_line_number, header_line
+
+                yield seq_line_no, seq_line
+                first_iteration = False
+
+            hit_count += 1
+        elif header_match:
+            if max_count and hit_count >= max_count:
+                return
+
+            yield header_line_number, header_line
+            offset = 0
+
+            for subseq_line_no, linebreak in sorted(linebreaks):
+                start = offset
+                end = offset + linebreak
+                subseq = sequence_data[start:end]
+                yield subseq_line_no, subseq
+                offset += linebreak
+
+            hit_count += 1
 
 
 def stdin_has_data():
