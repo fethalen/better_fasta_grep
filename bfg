@@ -403,7 +403,7 @@ def search_sequences(patterns, file, invert_match=False, color=False,
     hit_count = 0
 
     for line_number, line in enumerate(lines_in_fasta(file), 1):
-        if hit_count >= max_count:
+        if max_count and hit_count >= max_count:
             return
 
         if is_header(line):
