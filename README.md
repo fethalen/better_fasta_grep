@@ -30,7 +30,7 @@ Download the script onto your computer by clicking the 'Download' button on
 this page, or use `git` to copy the `bfg` project into your current directory:
 
 ```bash
-git clone https://gitlab.com/fethalen/bfg
+git clone https://github.com/fethalen/better_fasta_grep
 ```
 
 Make the script executable by typing `chmod +x bfg`, while in the `bfg`
