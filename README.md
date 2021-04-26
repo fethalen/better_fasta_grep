@@ -59,4 +59,4 @@ export PATH=$PATH:${HOME}/projects/bfg >> ~/.bashrc
 5. [Input Data](https://gitlab.com/fethalen/bfg/wikis/home#input)
 6. [Usage](https://gitlab.com/fethalen/bfg/wikis/home#usage)
 
-© Dep. for Animal Evolution and Biodiversity 2019
+© Department for Animal Evolution and Biodiversity 2019
