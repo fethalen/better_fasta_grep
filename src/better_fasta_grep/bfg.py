@@ -764,5 +764,9 @@ def main():
         output_records(hits, args.line_number, color)
 
 
+def entry():
+    main()
+    return 0
+
 if __name__ == '__main__':
     main()

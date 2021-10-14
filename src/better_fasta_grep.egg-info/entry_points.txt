@@ -1,0 +1,4 @@
+[console_scripts]
+better_fasta_grep = better_fasta_grep.bfg:entry
+bfg = better_fasta_grep.bfg:entry
+

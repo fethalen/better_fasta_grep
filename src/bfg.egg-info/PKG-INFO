@@ -1,0 +1,82 @@
+Metadata-Version: 2.1
+Name: bfg
+Version: 1.0.8
+Summary: Grep-like tool for retrieving matching sequence records from a FASTA file
+Home-page: https://github.com/clemensma/better_fasta_grep
+Author: Felix Thalen, Clemens Mauksch
+Author-email: felix.thalen@uni-goettingen.de, clemens.mauksch@uni-goettingen.de
+License: GPL 3
+Keywords: bioinformatics,fasta,grep,regular-expressions,bioinformatics-tool,grep-like
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Scientific/Engineering :: Bio-Informatics
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+
+Better FASTA Grep
+-----------------
+
+<img src="https://gitlab.com/fethalen/bfg/raw/master/images/bfg.png" alt="BFG logo - a pair of binoculars" align="right" width = "20%"/>
+
+Better FASTA Grep, or BFG for short, is a Grep-like utility for retrieving
+matching sequence records from a FASTA file. Given one or more patterns and a
+FASTA file, it searches the file for matching headers and or sequences and
+outputs any matching headers, sequences, or both.
+
+## Features
+
+* Search headers, sequences, or both
+* Search via regular expressions or plain strings
+* Case-insensitive search
+* Select non-matching sequence records
+* Count the number of matches
+* Display line numbers in the result
+* Sequence records, not individual lines, are selected
+* Multi-line sequences are treated as singular units
+* Flexible output options: output headers, sequences, or both
+
+<img src="https://gitlab.com/fethalen/bfg/raw/master/images/bfg_screenshot_1.png" alt="BFG Screenshot" />
+
+A screenshot of running BFG under macOS Mojave.
+
+## Quick installation
+
+Download the script onto your computer by clicking the 'Download' button on
+this page, or use `git` to copy the `bfg` project into your current directory:
+
+```bash
+git clone https://github.com/fethalen/better_fasta_grep
+```
+
+Make the script executable by typing `chmod +x bfg`, while in the `bfg`
+directory. `bfg` can now be run by typing the following command.
+
+```bash
+./bfg --help
+```
+
+If you see yourself using this tool frequently, then you can add it to your
+path, so that you can reference it from any working directory. First, put the
+`bfg` directory into a permanent location (not your Desktop or Downloads
+folder). I keep my copy of `bfg` in my `~/projects` directory, so for me I
+would type:
+
+```bash
+export PATH=$PATH:${HOME}/projects/bfg >> ~/.bashrc
+```
+
+## [Documentation](https://gitlab.com/fethalen/bfg/wikis/home)
+
+1. [Introduction](https://gitlab.com/fethalen/bfg/wikis/home#introduction)
+2. [Installation](https://gitlab.com/fethalen/bfg/wikis/home#installation)
+3. [Invoking `bfg`](https://gitlab.com/fethalen/bfg/wikis/home#invocation)
+4. [Regular Expressions](https://gitlab.com/fethalen/bfg/wikis/home#regex)
+5. [Input Data](https://gitlab.com/fethalen/bfg/wikis/home#input)
+6. [Usage](https://gitlab.com/fethalen/bfg/wikis/home#usage)
+
+© Department for Animal Evolution and Biodiversity 2019
+
+
