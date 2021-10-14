@@ -1,0 +1,46 @@
+{% set name = "better_fasta_grep" %}
+{% set version = "1.0.1" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+  sha256: 660cc591be5384043f6e3303f1370b79ac48e7b591548fe75c58259172bf0602
+
+build:
+  number: 0
+  entry_points:
+    - bfg = better_fasta_grep.bfg:entry
+    - better_fasta_grep = better_fasta_grep.bfg:entry
+  script: "{{ PYTHON }} -m pip install . -vv"
+
+requirements:
+  host:
+    - pip
+    - python
+    - setuptools >=30.3.0wheelsetuptools_scm
+  run:
+    - python
+    - setuptools >=30.3.0wheelsetuptools_scm
+
+test:
+  imports:
+    - better_fasta_grep
+  commands:
+    - bfg --help
+    - better_fasta_grep --help
+
+about:
+  home: "https://github.com/fethalen/better_fasta_grep"
+  license: "GNU General Public v3 (GPLv3)"
+  license_family: GPL3
+  license_file: LICENSE
+  summary: "Grep-like tool for retrieving matching sequence records from a FASTA file"
+  doc_url: "https://github.com/fethalen/better_fasta_grep#readme"
+
+extra:
+  recipe-maintainers:
+    - fethalen
+    - clemensma

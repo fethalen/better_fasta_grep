@@ -1,6 +1,7 @@
-LICENSE.txt
+LICENSE
 MANIFEST.in
 README.md
+VERSION
 pyproject.toml
 setup.py
 images/.DS_Store
@@ -16,3 +17,9 @@ src/better_fasta_grep.egg-info/dependency_links.txt
 src/better_fasta_grep.egg-info/entry_points.txt
 src/better_fasta_grep.egg-info/requires.txt
 src/better_fasta_grep.egg-info/top_level.txt
+src/bfg.egg-info/PKG-INFO
+src/bfg.egg-info/SOURCES.txt
+src/bfg.egg-info/dependency_links.txt
+src/bfg.egg-info/entry_points.txt
+src/bfg.egg-info/requires.txt
+src/bfg.egg-info/top_level.txt

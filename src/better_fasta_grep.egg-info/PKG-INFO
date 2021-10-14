@@ -1,8 +1,8 @@
 Metadata-Version: 2.1
 Name: better-fasta-grep
-Version: 1.0.1
+Version: 1.0.2
 Summary: Grep-like tool for retrieving matching sequence records from a FASTA file
-Home-page: https://github.com/clemensma/better_fasta_grep
+Home-page: https://github.com/fethalen/better_fasta_grep
 Author: Felix Thalen, Clemens Mauksch
 Author-email: felix.thalen@uni-goettingen.de, clemens.mauksch@uni-goettingen.de
 License: GPL 3
@@ -14,7 +14,7 @@ Classifier: Operating System :: OS Independent
 Classifier: Topic :: Scientific/Engineering :: Bio-Informatics
 Requires-Python: >=3.6
 Description-Content-Type: text/markdown
-License-File: LICENSE.txt
+License-File: LICENSE
 
 Better FASTA Grep
 -----------------

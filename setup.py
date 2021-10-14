@@ -9,7 +9,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="better_fasta_grep",
-    version="1.0.1",
+    version="1.0.2",
     author="Felix Thalen, Clemens Mauksch",
     author_email="felix.thalen@uni-goettingen.de, clemens.mauksch@uni-goettingen.de",
     license="GPL 3",
@@ -25,7 +25,7 @@ setup(
     python_requires='>=3.6',
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
-    url="https://github.com/clemensma/better_fasta_grep",
+    url="https://github.com/fethalen/better_fasta_grep",
     keywords=["bioinformatics", "fasta", "grep", "regular-expressions",
                 "bioinformatics-tool", "grep-like"],
     classifiers=[
