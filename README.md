@@ -35,8 +35,8 @@ pip install better_fasta_grep
 You can then launch `bfg` using _one_ of the following commands:
 
 ```bash
-./bfg --help
-./better_fasta_grep --help # equivalent
+bfg --help
+better_fasta_grep --help # equivalent
 ```
 
 ## [Documentation](https://github.com/fethalen/better_fasta_grep/wiki)
