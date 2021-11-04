@@ -26,28 +26,17 @@ A screenshot of running BFG under macOS Mojave.
 
 ## Quick installation
 
-Download the script onto your computer by clicking the 'Download' button on
-this page, or use `git` to copy the `bfg` project into your current directory:
+The easiest way to install this program is via `pip`:
 
 ```bash
-git clone https://github.com/fethalen/better_fasta_grep
+pip install better_fasta_grep
 ```
 
-Make the script executable by typing `chmod +x bfg`, while in the `bfg`
-directory. `bfg` can now be run by typing the following command.
+You can then launch `bfg` using _one_ of the following commands:
 
 ```bash
 ./bfg --help
-```
-
-If you see yourself using this tool frequently, then you can add it to your
-path, so that you can reference it from any working directory. First, put the
-`bfg` directory into a permanent location (not your Desktop or Downloads
-folder). I keep my copy of `bfg` in my `~/projects` directory, so for me I
-would type:
-
-```bash
-export PATH=$PATH:${HOME}/projects/bfg >> ~/.bashrc
+./better_fasta_grep --help # equivalent
 ```
 
 ## [Documentation](https://gitlab.com/fethalen/bfg/wikis/home)
