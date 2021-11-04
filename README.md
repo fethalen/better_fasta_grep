@@ -39,13 +39,13 @@ You can then launch `bfg` using _one_ of the following commands:
 ./better_fasta_grep --help # equivalent
 ```
 
-## [Documentation](https://gitlab.com/fethalen/bfg/wikis/home)
+## [Documentation](https://github.com/fethalen/better_fasta_grep/wiki)
 
-1. [Introduction](https://gitlab.com/fethalen/bfg/wikis/home#introduction)
-2. [Installation](https://gitlab.com/fethalen/bfg/wikis/home#installation)
-3. [Invoking `bfg`](https://gitlab.com/fethalen/bfg/wikis/home#invocation)
-4. [Regular Expressions](https://gitlab.com/fethalen/bfg/wikis/home#regex)
-5. [Input Data](https://gitlab.com/fethalen/bfg/wikis/home#input)
-6. [Usage](https://gitlab.com/fethalen/bfg/wikis/home#usage)
+1. [Introduction](https://github.com/fethalen/better_fasta_grep/wiki#1-introduction)
+2. [Installation](https://github.com/fethalen/better_fasta_grep/wiki#2-installation)
+3. [Invoking `bfg`](https://github.com/fethalen/better_fasta_grep/wiki#3-invoking-bfg)
+4. [Regular Expressions](https://github.com/fethalen/better_fasta_grep/wiki#4-regular-expressions)
+5. [Input Data](https://github.com/fethalen/better_fasta_grep/wiki#5-input-data)
+6. [Usage](https://github.com/fethalen/better_fasta_grep/wiki#6-usage)
 
 © Department for Animal Evolution and Biodiversity 2019
