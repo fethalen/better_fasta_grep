@@ -92,7 +92,7 @@ def add_pattern(string, ignore_case=False, fixed_strings=False):
     if fixed_strings:
         string = re.escape(string)
 
-    if ignore_case and fixed_strings:
+    if ignore_case:
         return re.compile(string, re.IGNORECASE)
     return re.compile(string)
 
