@@ -9,7 +9,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="better_fasta_grep",
-    version="1.0.2",
+    version="1.0.3",
     author="Felix Thalen, Clemens Mauksch",
     author_email="felix.thalen@uni-goettingen.de, clemens.mauksch@uni-goettingen.de",
     license="GPL 3",
