@@ -18,8 +18,8 @@ setup(
     packages=find_packages(where="src"),
     entry_points={"console_scripts": ["bfg = better_fasta_grep.bfg:entry", "better_fasta_grep = better_fasta_grep.bfg:entry"]},
     install_requires=[
-        "setuptools>=30.3.0"
-        "wheel"
+        "setuptools>=30.3.0",
+        "wheel",
         "setuptools_scm"
     ],
     python_requires='>=3.6',
@@ -33,5 +33,5 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering :: Bio-Informatics"
-    ],         
+    ],
 )
